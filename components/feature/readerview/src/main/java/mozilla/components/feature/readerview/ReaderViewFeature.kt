@@ -51,7 +51,7 @@ class ReaderViewFeature(
     private val context: Context,
     private val engine: Engine,
     private val store: BrowserStore,
-    controlsView: ReaderViewControlsView,
+    private var controlsView: ReaderViewControlsView?,
     private val onReaderViewStatusChange: onReaderViewStatusChange = { _, _ -> Unit }
 ) : LifecycleAwareFeature, UserInteractionHandler {
 
@@ -71,11 +71,25 @@ class ReaderViewFeature(
         extensionController.sendContentMessage(message, engineSession, READER_VIEW_ACTIVE_CONTENT_PORT)
     }
 
-    private val controlsPresenter = ReaderViewControlsPresenter(controlsView, config)
-    private val controlsInteractor = ReaderViewControlsInteractor(controlsView, config)
+    private var controlsPresenter : ReaderViewControlsPresenter? = null
+    private var controlsInteractor : ReaderViewControlsInteractor? = null
 
     enum class FontType(val value: String) { SANSSERIF("sans-serif"), SERIF("serif") }
     enum class ColorScheme { LIGHT, SEPIA, DARK }
+
+    init {
+        controlsView?.let {
+            controlsPresenter = ReaderViewControlsPresenter(it, config)
+            controlsInteractor = ReaderViewControlsInteractor(it, config)
+        }
+    }
+
+    fun updateControlsView(view: ReaderViewControlsView){
+        controlsView = view
+        controlsPresenter = ReaderViewControlsPresenter(view, config)
+        controlsInteractor = ReaderViewControlsInteractor(view, config)
+        controlsInteractor?.start()
+    }
 
     override fun start() {
         ensureExtensionInstalled()
@@ -98,18 +112,18 @@ class ReaderViewFeature(
                 }
         }
 
-        controlsInteractor.start()
+        controlsInteractor?.start()
     }
 
     override fun stop() {
         scope?.cancel()
-        controlsInteractor.stop()
+        controlsInteractor?.stop()
     }
 
     override fun onBackPressed(): Boolean {
         store.state.selectedTab?.let {
             if (it.readerState.active) {
-                if (controlsPresenter.areControlsVisible()) {
+                if (controlsPresenter?.areControlsVisible() ?: false) {
                     hideControls()
                 } else {
                     hideReaderView()
@@ -125,7 +139,9 @@ class ReaderViewFeature(
      */
     fun showReaderView(session: TabSessionState? = store.state.selectedTab) {
         session?.let { it ->
+            println("Displayed session ok")
             if (!it.readerState.active) {
+                println("Displayed reader state ok")
                 extensionController.sendContentMessage(
                     createShowReaderMessage(config),
                     it.engineState.engineSession,
@@ -162,14 +178,14 @@ class ReaderViewFeature(
      * Shows the reader view appearance controls.
      */
     fun showControls() {
-        controlsPresenter.show()
+        controlsPresenter?.show()
     }
 
     /**
      * Hides the reader view appearance controls.
      */
     fun hideControls() {
-        controlsPresenter.hide()
+        controlsPresenter?.hide()
     }
 
     @VisibleForTesting
