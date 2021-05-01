@@ -63,6 +63,8 @@ dependencies {
     implementation Dependencies.androidx_room_runtime
     kapt Dependencies.androidx_room_compiler
 
+    compileOnly 'org.glassfish:javax.annotation:10.0-b28'
+
     testImplementation project(':support-test')
     testImplementation project(':support-test-libstate')
 
