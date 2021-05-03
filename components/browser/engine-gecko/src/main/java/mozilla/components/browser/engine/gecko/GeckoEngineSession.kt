@@ -620,6 +620,7 @@ class GeckoEngineSession(
             }
         }
 
+        private var time1 = 0L
         override fun onPageStart(session: GeckoSession, url: String) {
             // This log statement is temporary and parsed by FNPRMS for performance measurements. It can be
             // removed once FNPRMS is replaced: https://github.com/mozilla-mobile/android-components/issues/8662
@@ -632,6 +633,8 @@ class GeckoEngineSession(
                 return
             }
 
+            time1 = System.currentTimeMillis()
+            println("Displayed >>>> pagestart $url at ${time1}")
             notifyObservers {
                 onProgress(PROGRESS_START)
                 onLoadingStateChange(true)
@@ -655,6 +658,8 @@ class GeckoEngineSession(
                 onProgress(PROGRESS_STOP)
                 onLoadingStateChange(false)
             }
+            val time2 = System.currentTimeMillis()
+            println("Displayed >>> pagestop with $success at ${time2} and took : ${time2-time1} ms")
         }
 
         override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
